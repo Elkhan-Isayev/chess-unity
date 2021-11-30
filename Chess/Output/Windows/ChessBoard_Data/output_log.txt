@@ -1,0 +1,37 @@
+Initialize engine version: 5.5.2f1 (3829d7f588f3)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: NVIDIA GeForce 840M (ID=0x1341)
+    Vendor:   NVIDIA
+    VRAM:     3072 MB
+    Driver:   10.18.10.3960
+Begin MonoManager ReloadAssembly
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
+Loading C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.PlaymodeTestsRunner.dll (this message is harmless)
+Loading C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\UnityEngine.PlaymodeTestsRunner.dll into Unity Child Domain
+- Completed reload, in  0.686 seconds
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: C:\Users\user\source\repos\UnityProjects\Chess\Output\Windows\ChessBoard_Data\Managed\System.dll (this message is harmless)
+<RI> Initializing input.
+<RI> Input initialized.
+desktop: 1366x768 60Hz; virtual: 1366x768 at 0,0
+<RI> Initialized touch support.
+UnloadTime: 1.970632 ms
+BlackPawn3
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
+
+BlackPawn3
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
+
+Setting up 1 worker threads for Enlighten.
+  Thread -> id: 3f28 -> priority: 1 
