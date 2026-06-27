@@ -9,6 +9,9 @@ import { Room } from './room.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
+// Time control (seconds). Defaults to 5 minutes + 3 second increment — good for office blitz.
+const TIME_BASE = (Number(process.env.TIME_BASE) || 300) * 1000;
+const TIME_INC = (Number(process.env.TIME_INC) || 3) * 1000;
 
 const app = express();
 const publicDir = join(__dirname, '..', 'public');
@@ -28,7 +31,7 @@ const rooms = new Map();
 
 function getRoom(id) {
   const roomId = (id || 'main').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 32) || 'main';
-  if (!rooms.has(roomId)) rooms.set(roomId, new Room(roomId));
+  if (!rooms.has(roomId)) rooms.set(roomId, new Room(roomId, { base: TIME_BASE, inc: TIME_INC }));
   return rooms.get(roomId);
 }
 
@@ -123,6 +126,14 @@ const heartbeat = setInterval(() => {
   }
 }, 30000);
 wss.on('close', () => clearInterval(heartbeat));
+
+// Flag fallen clocks even when the player just sits there without moving.
+const flagTicker = setInterval(() => {
+  for (const room of rooms.values()) {
+    if (room.checkFlag()) broadcast(room);
+  }
+}, 1000);
+wss.on('close', () => clearInterval(flagTicker));
 
 function lanAddresses() {
   const addrs = [];

@@ -277,6 +277,22 @@ button.primary:hover { filter: brightness(1.08); }
 .pname { font-weight: 600; }
 .captured { display: flex; gap: 1px; flex-wrap: wrap; min-height: 20px; margin-top: 2px; }
 .captured .cap { width: 20px; height: 20px; background-size: contain; background-repeat: no-repeat; opacity: 0.85; }
+.clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 16px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  min-width: 96px;
+  text-align: center;
+}
+.clock.running { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(79, 157, 255, 0.25); }
+.clock.low { color: var(--danger); }
+.clock.flagged { background: var(--danger); color: #fff; border-color: var(--danger); }
 .sit-btn {
   background: var(--good);
   border: none;

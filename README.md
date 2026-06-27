@@ -17,9 +17,11 @@ engine, so the game can never get into an illegal state.
 - 🌐 **Offline LAN play** — host on one PC, others open a link. No internet, no accounts, no setup for guests.
 - 🔗 **Share a link** — the server prints your LAN address on startup; there's a one-click *Copy link* button too.
 - ♟️ **Real chess rules** — every legal move, plus check / checkmate / stalemate / castling / en passant / promotion / draws.
+- ⏱️ **Chess clocks** — server-authoritative time control with increment (default **5 min + 3 sec**), live ticking, and win-on-time.
 - 👁️ **Spectators** — unlimited watchers see the game update live and can chat. Empty seats can be claimed.
 - 🎭 **Roles & sessions** — first two to join are White & Black; rooms let you run several games at once (`?room=name`).
 - 🖱️ **Drag-and-drop or click-to-move**, legal-move highlights, last-move & check indicators, captured-piece tray, move list.
+- 🔊 **Sound effects** for moves, captures, check and game-over (toggleable), plus a **flip-board** button.
 - 💬 **Built-in chat**, **resign**, **offer/agree draw**, and **rematch** (with color swap).
 - 🔄 **Reconnect-safe** — refresh or drop off Wi-Fi and you keep your seat.
 
@@ -53,6 +55,12 @@ You'll see something like:
    same Wi-Fi / LAN. They just open it in any browser — phone, laptop, whatever.
 
 Want a different port? `PORT=8080 npm start`.
+
+**Time control** is configurable via environment variables (seconds):
+
+```bash
+TIME_BASE=600 TIME_INC=5 npm start   # 10 minutes + 5 second increment
+```
 
 ---
 

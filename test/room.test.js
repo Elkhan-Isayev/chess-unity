@@ -108,6 +108,52 @@ test('rematch resets the board and swaps colors', () => {
   assert.equal(r.black, w.token);
 });
 
+test('clock: starts at base, first move untimed, increment applies after', () => {
+  const { r, w, b } = seatTwo();
+  const base = r.timeControl.base;
+  assert.equal(r.clock.w, base);
+  assert.equal(r.clock.b, base);
+
+  r.move(w.token, { from: 'e2', to: 'e4' }); // first move is not timed
+  assert.equal(r.clock.w, base);
+  assert.ok(r.turnStartedAt, 'black clock should be running');
+
+  r.turnStartedAt = Date.now() - 2000; // pretend black thought for 2s
+  r.move(b.token, { from: 'e7', to: 'e5' });
+  // base - 2000 thinking + 3000 increment = base + 1000 (allow timing slack)
+  assert.ok(r.clock.b > base + 800 && r.clock.b < base + 1200, `got ${r.clock.b}`);
+});
+
+test('clock: running time is reflected live in remaining()', () => {
+  const { r, w } = seatTwo();
+  r.move(w.token, { from: 'e2', to: 'e4' });
+  r.turnStartedAt = Date.now() - 1000;
+  assert.ok(r.remaining('b') <= r.timeControl.base - 900);
+});
+
+test('clock: flag detection ends the game and awards the win', () => {
+  const { r, w } = seatTwo();
+  r.move(w.token, { from: 'e2', to: 'e4' }); // start black clock
+  r.clock.b = 500;
+  r.turnStartedAt = Date.now() - 1000; // black overspent
+  assert.equal(r.checkFlag(), true);
+  assert.equal(r.timedOut, 'b');
+  assert.equal(r.isOver(), true);
+  assert.deepEqual(r.outcome(), { status: 'timeout', winner: 'w' });
+});
+
+test('clock: rematch resets clocks', () => {
+  const { r, w } = seatTwo();
+  r.move(w.token, { from: 'e2', to: 'e4' });
+  r.clock.b = 1234;
+  r.timedOut = 'b';
+  r.rematch(true);
+  assert.equal(r.clock.w, r.timeControl.base);
+  assert.equal(r.clock.b, r.timeControl.base);
+  assert.equal(r.timedOut, null);
+  assert.equal(r.turnStartedAt, null);
+});
+
 test('spectator can sit in an empty seat', () => {
   const r = new Room('t');
   r.join({ name: 'W', preferredRole: 'player' }); // takes white

@@ -40,6 +40,8 @@
       <div class="room-pill">
         Room: <strong id="room-name">main</strong>
         <button id="copy-link" class="link-btn" title="Copy invite link">🔗 Copy link</button>
+        <button id="flip-btn" class="link-btn" title="Flip the board">⟲ Flip</button>
+        <button id="sound-btn" class="link-btn" title="Toggle sound">🔊 Sound</button>
       </div>
       <div id="role-badge" class="badge">Spectator</div>
     </header>
@@ -53,6 +55,7 @@
           <div class="captured" id="captured-top"></div>
         </div>
         <button class="sit-btn hidden" id="sit-black" data-color="black">Sit as Black</button>
+        <div class="clock" id="clock-top">5:00</div>
       </div>
 
       <div class="board-wrap">
@@ -68,6 +71,7 @@
           <div class="captured" id="captured-bottom"></div>
         </div>
         <button class="sit-btn hidden" id="sit-white" data-color="white">Sit as White</button>
+        <div class="clock" id="clock-bottom">5:00</div>
       </div>
     </main>
 

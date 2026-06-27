@@ -7,7 +7,8 @@ import { randomUUID } from 'node:crypto';
  * happens here — clients are never trusted.
  */
 export class Room {
-  constructor(id) {
+  /** @param {string} id @param {{base:number, inc:number}} [timeControl] */
+  constructor(id, timeControl = { base: 300000, inc: 3000 }) {
     this.id = id;
     this.chess = new Chess();
     /** @type {Map<string, Member>} every connected member keyed by token */
@@ -20,6 +21,43 @@ export class Room {
     this.drawOffer = null; // 'w' | 'b' | null — who is offering
     this.chat = []; // { from, text, ts }
     this.createdAt = Date.now();
+
+    // --- Clocks (server-authoritative) ---
+    this.timeControl = timeControl;
+    this.clock = { w: timeControl.base, b: timeControl.base };
+    this.turnStartedAt = null; // ms timestamp the on-move clock started, or null
+    this.timedOut = null; // 'w' | 'b' | null
+  }
+
+  /** Live remaining time for a side, accounting for the running clock. */
+  remaining(color, now = Date.now()) {
+    let ms = this.clock[color];
+    if (this.turnStartedAt && this.chess.turn() === color && !this.isOver()) {
+      ms -= now - this.turnStartedAt;
+    }
+    return Math.max(0, ms);
+  }
+
+  /** Deduct the elapsed thinking time from the mover and add the increment. */
+  _settleClock(now, mover) {
+    if (!this.turnStartedAt) return; // the very first move is not timed
+    this.clock[mover] = Math.max(
+      0,
+      this.clock[mover] - (now - this.turnStartedAt) + this.timeControl.inc,
+    );
+  }
+
+  /** Called by the server on a timer; flags a side that has run out of time. */
+  checkFlag(now = Date.now()) {
+    if (this.isOver() || !this.turnStartedAt) return false;
+    const onMove = this.chess.turn();
+    if (this.clock[onMove] - (now - this.turnStartedAt) <= 0) {
+      this.clock[onMove] = 0;
+      this.timedOut = onMove;
+      this.turnStartedAt = null;
+      return true;
+    }
+    return false;
   }
 
   /** Seat a member, reusing their token if they reconnect. */
@@ -68,11 +106,17 @@ export class Room {
     const color = this.colorOf(token);
     if (!color) return { ok: false, error: 'Spectators cannot move.' };
     if (color !== this.chess.turn()) return { ok: false, error: 'Not your turn.' };
+    const now = Date.now();
+    // The clock is checked at move time too, so a slow mover can't sneak a move in.
+    if (this.checkFlag(now)) return { ok: false, error: 'Your time ran out.' };
     try {
       const result = this.chess.move({ from, to, promotion: promotion || 'q' });
       if (!result) return { ok: false, error: 'Illegal move.' };
       this.lastMove = { from: result.from, to: result.to };
       this.drawOffer = null; // any move cancels a pending draw offer
+      // Settle the mover's clock, then start the opponent's.
+      this._settleClock(now, color);
+      this.turnStartedAt = this.isOver() ? null : now;
       return { ok: true };
     } catch {
       return { ok: false, error: 'Illegal move.' };
@@ -108,6 +152,9 @@ export class Room {
     this.resignedBy = null;
     this.drawAgreed = false;
     this.drawOffer = null;
+    this.clock = { w: this.timeControl.base, b: this.timeControl.base };
+    this.turnStartedAt = null;
+    this.timedOut = null;
     if (swap) {
       const w = this.white;
       this.white = this.black;
@@ -134,12 +181,16 @@ export class Room {
     return (
       this.resignedBy !== null ||
       this.drawAgreed ||
+      this.timedOut !== null ||
       this.chess.isGameOver()
     );
   }
 
   /** Human-readable status + winner. */
   outcome() {
+    if (this.timedOut) {
+      return { status: 'timeout', winner: this.timedOut === 'w' ? 'b' : 'w' };
+    }
     if (this.resignedBy) {
       return { status: 'resigned', winner: this.resignedBy === 'w' ? 'b' : 'w' };
     }
@@ -162,6 +213,7 @@ export class Room {
 
   /** A snapshot every client renders from. */
   state() {
+    const now = Date.now();
     const { status, winner } = this.outcome();
     const spectators = [];
     for (const m of this.members.values()) {
@@ -186,6 +238,13 @@ export class Room {
       },
       spectators,
       chat: this.chat,
+      clock: {
+        w: this.remaining('w', now),
+        b: this.remaining('b', now),
+        running: this.turnStartedAt && !this.isOver() ? this.chess.turn() : null,
+        base: this.timeControl.base,
+        inc: this.timeControl.inc,
+      },
     };
   }
 }

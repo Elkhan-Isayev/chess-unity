@@ -13,9 +13,19 @@ let myRole = 'spectator';           // white | black | spectator
 let myColor = null;                 // 'w' | 'b' | null
 let lastState = null;
 let pendingPromotion = null;        // { from, to }
+let manualFlip = false;             // user override of board orientation
+let clockData = null;               // { w, b, running, at }
+let prevHistoryLen = null;          // for sound triggering
+let soundEnabled = true;
 
 const params = new URLSearchParams(location.search);
 const storedToken = () => localStorage.getItem('chess-token');
+
+// Board orientation: your color at the bottom, optionally flipped by the user.
+function orientation() {
+  const base = myColor === 'b' ? 'b' : 'w';
+  return manualFlip ? (base === 'w' ? 'b' : 'w') : base;
+}
 
 // ---------- Board ----------
 const board = new BoardView($('board'), {
@@ -49,6 +59,7 @@ function enterGame() {
   if (!name) { $('join-error').textContent = 'Please enter a name.'; return; }
   const room = ($('room-input').value.trim() || 'main').toLowerCase();
   localStorage.setItem('chess-name', name);
+  ensureAudio(); // first user gesture — unlock Web Audio
   connect({ name, room, preferredRole: chosenRole });
 }
 
@@ -116,7 +127,8 @@ function applyState(state) {
 
   // Keep my seat/color in sync (e.g. after rematch swap or sitting down).
   syncMyColor(state);
-  board.setOrientation(myColor === 'b' ? 'b' : 'w');
+  board.setOrientation(orientation());
+  playSounds(state);
 
   const pos = positionMap();
   const checkSquare = chess.inCheck() ? kingSquare(chess.turn()) : null;
@@ -129,7 +141,45 @@ function applyState(state) {
   renderChat(state);
   renderControls(state);
   renderBanner(state);
+  applyClocks(state);
 }
+
+// ---------- Clocks ----------
+function applyClocks(state) {
+  clockData = { w: state.clock.w, b: state.clock.b, running: state.clock.running, at: Date.now() };
+  renderClocks();
+}
+
+function renderClocks() {
+  if (!clockData) return;
+  const now = Date.now();
+  const live = { w: clockData.w, b: clockData.b };
+  if (clockData.running) {
+    live[clockData.running] = Math.max(0, clockData[clockData.running] - (now - clockData.at));
+  }
+  const flip = orientation() === 'b';
+  setClock('bottom', flip ? 'b' : 'w', live, clockData.running);
+  setClock('top', flip ? 'w' : 'b', live, clockData.running);
+}
+
+function setClock(pos, color, live, running) {
+  const el = $(`clock-${pos}`);
+  const ms = live[color];
+  el.textContent = formatClock(ms);
+  el.classList.toggle('running', running === color);
+  el.classList.toggle('low', ms > 0 && ms <= 20000);
+  el.classList.toggle('flagged', ms <= 0 && lastState?.status === 'timeout' && lastState?.winner !== color);
+}
+
+function formatClock(ms) {
+  ms = Math.max(0, ms);
+  if (ms < 20000) return (ms / 1000).toFixed(1); // tenths under 20s
+  const s = Math.ceil(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// Tick the running clock locally between server updates.
+setInterval(renderClocks, 200);
 
 function syncMyColor(state) {
   // The server tells each client its own role/color in every state update,
@@ -284,6 +334,7 @@ function renderBanner(state) {
   let title = 'Game over';
   let sub = '';
   if (state.status === 'checkmate') { title = 'Checkmate'; sub = `${state.winner === 'w' ? 'White' : 'Black'} wins`; }
+  else if (state.status === 'timeout') { title = 'Time out'; sub = `${state.winner === 'w' ? 'White' : 'Black'} wins on time`; }
   else if (state.status === 'resigned') { title = 'Resignation'; sub = `${state.winner === 'w' ? 'White' : 'Black'} wins`; }
   else if (state.status === 'stalemate') { title = 'Stalemate'; sub = 'Draw'; }
   else if (state.status === 'draw') { title = 'Draw'; sub = 'Agreed / 50-move / repetition'; }
@@ -347,6 +398,17 @@ $('chat-form').addEventListener('submit', (e) => {
   input.value = '';
 });
 
+$('flip-btn').onclick = () => {
+  manualFlip = !manualFlip;
+  if (lastState) applyState(lastState);
+};
+
+$('sound-btn').onclick = () => {
+  soundEnabled = !soundEnabled;
+  $('sound-btn').textContent = soundEnabled ? '🔊 Sound' : '🔇 Muted';
+  if (soundEnabled) { ensureAudio(); tone(440, 0.07); }
+};
+
 $('copy-link').onclick = async () => {
   const room = $('room-name').textContent;
   const url = `${location.origin}/?room=${encodeURIComponent(room)}`;
@@ -357,6 +419,47 @@ $('copy-link').onclick = async () => {
     prompt('Copy this link:', url);
   }
 };
+
+// ---------- Sounds (Web Audio, no asset files) ----------
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch { /* unsupported */ }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function tone(freq, duration = 0.09, type = 'sine', gain = 0.15, delay = 0) {
+  if (!soundEnabled || !audioCtx) return;
+  const t0 = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration);
+}
+
+function playSounds(state) {
+  const len = state.history.length;
+  // Skip the initial snapshot so we don't beep on join.
+  if (prevHistoryLen === null) { prevHistoryLen = len; return; }
+
+  if (state.gameOver && !lastStateGameOver) {
+    tone(523, 0.14); tone(392, 0.16, 'sine', 0.15, 0.12); tone(330, 0.22, 'sine', 0.15, 0.26);
+  } else if (len > prevHistoryLen) {
+    const san = state.history[len - 1].san;
+    if (san.includes('#')) tone(523, 0.18, 'sine', 0.18);
+    else if (san.includes('+')) { tone(660, 0.08, 'square', 0.12); tone(880, 0.08, 'square', 0.12, 0.09); }
+    else if (san.includes('x')) tone(300, 0.1, 'triangle', 0.18);
+    else tone(440, 0.07, 'sine', 0.12);
+  }
+  prevHistoryLen = len;
+  lastStateGameOver = state.gameOver;
+}
+let lastStateGameOver = false;
 
 // ---------- Helpers ----------
 let toastTimer = null;
