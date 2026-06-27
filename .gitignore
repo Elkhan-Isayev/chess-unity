@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log*
+.env
+
+# Test / build artifacts
+coverage/
+*.log
+
+# Unity (legacy project)
+legacy/Chess/Library/
+legacy/Chess/Temp/
+legacy/Chess/Obj/
+legacy/Chess/Build/
+legacy/Chess/Output/
+legacy/Chess/Logs/
+legacy/Chess/UserSettings/
+legacy/**/obj/
+legacy/**/bin/
+
+# OS
+.DS_Store
+Thumbs.db

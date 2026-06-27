@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess LAN ♚</title>
+  <link rel="icon" href="/assets/pieces/wN.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <!-- Join screen -->
+  <div id="join-screen" class="overlay">
+    <div class="card join-card">
+      <div class="brand"><span class="brand-mark">♚</span> Chess LAN</div>
+      <p class="muted">Play over your local network — no internet needed.</p>
+      <label class="field">
+        <span>Your name</span>
+        <input id="name-input" type="text" maxlength="20" placeholder="e.g. Magnus" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Room</span>
+        <input id="room-input" type="text" maxlength="32" placeholder="main" autocomplete="off" />
+      </label>
+      <div class="field">
+        <span>Join as</span>
+        <div class="role-toggle">
+          <button class="role-btn active" data-role="player">♟ Player</button>
+          <button class="role-btn" data-role="spectator">👁 Spectator</button>
+        </div>
+      </div>
+      <button id="enter-btn" class="primary">Enter game</button>
+      <p id="join-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game-screen" class="layout hidden">
+    <header class="topbar">
+      <div class="brand small"><span class="brand-mark">♚</span> Chess LAN</div>
+      <div class="room-pill">
+        Room: <strong id="room-name">main</strong>
+        <button id="copy-link" class="link-btn" title="Copy invite link">🔗 Copy link</button>
+      </div>
+      <div id="role-badge" class="badge">Spectator</div>
+    </header>
+
+    <main class="board-area">
+      <!-- Black player strip (top) -->
+      <div class="player-strip" id="strip-top">
+        <div class="avatar" id="avatar-top">?</div>
+        <div class="pinfo">
+          <div class="pname" id="name-top">Waiting…</div>
+          <div class="captured" id="captured-top"></div>
+        </div>
+        <button class="sit-btn hidden" id="sit-black" data-color="black">Sit as Black</button>
+      </div>
+
+      <div class="board-wrap">
+        <div id="board" class="board"></div>
+        <div id="board-banner" class="board-banner hidden"></div>
+      </div>
+
+      <!-- White player strip (bottom) -->
+      <div class="player-strip" id="strip-bottom">
+        <div class="avatar light" id="avatar-bottom">?</div>
+        <div class="pinfo">
+          <div class="pname" id="name-bottom">Waiting…</div>
+          <div class="captured" id="captured-bottom"></div>
+        </div>
+        <button class="sit-btn hidden" id="sit-white" data-color="white">Sit as White</button>
+      </div>
+    </main>
+
+    <aside class="sidebar">
+      <div class="panel status-panel">
+        <div id="turn-indicator" class="turn-indicator">
+          <span class="dot"></span><span id="turn-text">White to move</span>
+        </div>
+        <div class="controls">
+          <button id="btn-draw" class="ghost">½ Offer draw</button>
+          <button id="btn-resign" class="ghost danger">⚑ Resign</button>
+          <button id="btn-rematch" class="ghost hidden">↻ Rematch</button>
+        </div>
+        <div id="draw-offer" class="draw-offer hidden"></div>
+      </div>
+
+      <div class="panel moves-panel">
+        <div class="panel-title">Moves</div>
+        <ol id="move-list" class="move-list"></ol>
+      </div>
+
+      <div class="panel spectators-panel">
+        <div class="panel-title">Spectators (<span id="spec-count">0</span>)</div>
+        <div id="spectator-list" class="spectator-list muted">—</div>
+      </div>
+
+      <div class="panel chat-panel">
+        <div class="panel-title">Chat</div>
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" maxlength="300" placeholder="Say something…" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Promotion picker -->
+  <div id="promotion" class="overlay hidden">
+    <div class="card promo-card">
+      <div class="panel-title">Promote to</div>
+      <div class="promo-options" id="promo-options"></div>
+    </div>
+  </div>
+
+  <!-- Connection toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
